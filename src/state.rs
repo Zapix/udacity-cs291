@@ -35,6 +35,9 @@ impl Observer for State {
     }
 
     fn set_value(&mut self, value: &str) {
+        if value.is_empty() {
+            return;
+        }
         console::log_1(&format!("Set value {}", value).as_str().into());
         self.state = Some(String::from(value));
         for (key, notify) in (*self.subscribed).iter() {

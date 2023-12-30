@@ -5,6 +5,7 @@ use web_sys::{console, Document, HtmlElement, Element, Event, HtmlSelectElement}
 use crate::state::{Observer, State};
 
 const SELECT_EXERCISE_LABEL: &str = "Select exercise";
+const NO_SELECTED_EXERCISE_LABEL: &str = "Not select";
 
 fn create_menu(document: &Document, state: Rc<RefCell<State>>) -> Result<Element, JsValue> {
     let menu_block = document.create_element("div").unwrap();
@@ -15,6 +16,10 @@ fn create_menu(document: &Document, state: Rc<RefCell<State>>) -> Result<Element
     label.set_text_content(Some(SELECT_EXERCISE_LABEL));
 
     let select = document.create_element("select").unwrap();
+    let option = document.create_element("option").unwrap();
+    select.append_child(&option).unwrap();
+    option.set_text_content(Some(NO_SELECTED_EXERCISE_LABEL));
+    option.set_attribute("value", "");
     for i in 0..10 {
         let option = document.create_element("option").unwrap();
         option.set_text_content(
@@ -22,8 +27,8 @@ fn create_menu(document: &Document, state: Rc<RefCell<State>>) -> Result<Element
                 format!("Option {}", (i + 1)).as_str()
             )
         );
-        option.set_node_value(Some(format!("{}", i).as_str()));
-        select.append_child(&option);
+        option.set_attribute("value", format!("{}", i).as_str()).unwrap();
+        select.append_child(&option).unwrap();
     }
 
     let select_handler = Closure::wrap(Box::new(move |event: Event| {
@@ -49,7 +54,7 @@ pub fn create_plot(document: &Document, state: Rc<RefCell<State>>) -> Result<Rc<
     plot.set_class_name("plot");
     plot.set_attribute(
         "style",
-        "display: flex, flex-grow: 1, align-items: center; justify-content: center"
+        "display: flex; flex-grow: 1; align-items: center; justify-content: center;"
     ).unwrap();
 
     let movable_plot = plot.clone();
@@ -76,7 +81,7 @@ pub fn create_plot(document: &Document, state: Rc<RefCell<State>>) -> Result<Rc<
 pub fn run_app(document: &Document, base: &HtmlElement, state: Rc<RefCell<State>>) -> Result<(), JsValue> {
     let app = document.create_element("div").unwrap();
     app.set_class_name("main");
-    app.set_attribute("style", "display: flex; flex-direction: column;");
+    app.set_attribute("style", "display: flex; flex-direction: column; height: 100vh;");
 
     let menu = create_menu(&document, state.clone()).unwrap();
     app.append_child(&menu).unwrap();
