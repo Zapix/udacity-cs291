@@ -1,6 +1,8 @@
 mod utils;
+mod webui;
 
 use wasm_bindgen::prelude::*;
+use web_sys::HtmlElement;
 
 #[wasm_bindgen]
 extern "C" {
@@ -18,9 +20,6 @@ fn run() -> Result<(), JsValue> {
     let document = window.document().expect("Should have a document on window");
     let body = document.body().expect("Should have a body");
 
-    let p = document.create_element("div").unwrap();
-    p.set_text_content(Some("Hello cs291"));
-    body.append_child(&p);
-
+    webui::run_app(&document, &body);
     Ok(())
 }

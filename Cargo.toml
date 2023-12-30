@@ -24,8 +24,11 @@ features = [
     'Document',
     'Element',
     'HtmlElement',
+    'HtmlSelectElement',
     'Node',
     'Window',
+    'Event',
+    'console',
 ]
 
 [dev-dependencies]
