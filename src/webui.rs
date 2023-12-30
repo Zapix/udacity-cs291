@@ -20,14 +20,10 @@ fn create_menu(document: &Document, state: Rc<RefCell<State>>) -> Result<Element
     select.append_child(&option).unwrap();
     option.set_text_content(Some(NO_SELECTED_EXERCISE_LABEL));
     option.set_attribute("value", "");
-    for i in 0..10 {
+    for unit in state.borrow().units().iter() {
         let option = document.create_element("option").unwrap();
-        option.set_text_content(
-            Some(
-                format!("Option {}", (i + 1)).as_str()
-            )
-        );
-        option.set_attribute("value", format!("{}", i).as_str()).unwrap();
+        option.set_attribute("value", format!("{}", unit.identifier()).as_str()).unwrap();
+        option.set_text_content(Some(unit.label().as_str()));
         select.append_child(&option).unwrap();
     }
 
@@ -61,7 +57,7 @@ pub fn create_plot(document: &Document, state: Rc<RefCell<State>>) -> Result<Rc<
     (*state.borrow_mut()).subscribe(
         "plot",
         Box::new(move |value| {
-            console::log_1(&format!("Plot received value {}", value).as_str().into());
+            console::log_1(&format!("Plot received value {}", value.identifier()).as_str().into());
             let inner_plot = movable_plot.clone();
             inner_plot.set_inner_html("");
 
@@ -69,7 +65,7 @@ pub fn create_plot(document: &Document, state: Rc<RefCell<State>>) -> Result<Rc<
             let document = window.document().expect("Should have a document on window");
             let header = document.create_element("h1").unwrap();
             header.set_text_content(
-                Some(&format!("Selected option: {}", value))
+                Some(&format!("Selected option: {}", value.label()))
             );
             inner_plot.append_child(&header).unwrap();
         })
@@ -92,7 +88,10 @@ pub fn run_app(document: &Document, base: &HtmlElement, state: Rc<RefCell<State>
     (*state.clone().borrow_mut()).subscribe(
         "app",
         Box::new(|value| {
-            console::log_1(&format!("Application received value {}", value).as_str().into());
+            console::log_1(&format!(
+                "Application received value {}",
+                value.identifier()
+            ).as_str().into());
         }),
     ).unwrap();
 

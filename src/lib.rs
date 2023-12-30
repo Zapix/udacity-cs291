@@ -4,6 +4,9 @@ mod utils;
 mod webui;
 
 mod state;
+mod common;
+mod unit0;
+
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
