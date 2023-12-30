@@ -64,10 +64,7 @@ pub fn create_plot(document: &Document, state: Rc<RefCell<State>>) -> Result<Rc<
             let window = web_sys::window().expect("No global `window` exists");
             let document = window.document().expect("Should have a document on window");
             let header = document.create_element("h1").unwrap();
-            header.set_text_content(
-                Some(&format!("Selected option: {}", value.label()))
-            );
-            inner_plot.append_child(&header).unwrap();
+            value.render(inner_plot.as_ref()).unwrap();
         })
     ).unwrap();
 
