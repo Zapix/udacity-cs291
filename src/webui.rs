@@ -1,9 +1,12 @@
+use std::cell::RefCell;
+use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 use web_sys::{console, Document, HtmlElement, Element, Event, HtmlSelectElement};
+use crate::state::{Observer, State};
 
 const SELECT_EXERCISE_LABEL: &str = "Select exercise";
 
-fn create_menu(document: &Document) -> Result<Element, JsValue> {
+fn create_menu(document: &Document, state: Rc<RefCell<State>>) -> Result<Element, JsValue> {
     let menu_block = document.create_element("div").unwrap();
     menu_block.set_class_name("menu");
     menu_block.set_attribute("style", "display: flex; flex-direction: row;");
@@ -23,32 +26,72 @@ fn create_menu(document: &Document) -> Result<Element, JsValue> {
         select.append_child(&option);
     }
 
-    let select_handler = Closure::wrap(Box::new(|event: Event| {
+    let select_handler = Closure::wrap(Box::new(move |event: Event| {
         let select = event.current_target().unwrap().dyn_into::<HtmlSelectElement>().unwrap();
-        console::log_1(&format!("Selected value: {}", select.value()).as_str().into());
+        let mut mutable_state = state.borrow_mut();
+        mutable_state.set_value(select.value().as_str().into());
     }) as Box<dyn Fn(_)>);
 
     select.add_event_listener_with_callback(
         "change",
         &select_handler.as_ref().unchecked_ref()
-    );
+    ).unwrap();
     select_handler.forget();
 
-    menu_block.append_child(&label);
-    menu_block.append_child(&select);
+    menu_block.append_child(&label).unwrap();
+    menu_block.append_child(&select).unwrap();
 
     Ok(menu_block)
 }
 
-pub fn run_app(document: &Document, base: &HtmlElement) -> Result<(), JsValue> {
+pub fn create_plot(document: &Document, state: Rc<RefCell<State>>) -> Result<Rc<Element>, JsValue> {
+    let plot = Rc::new(document.create_element("div").unwrap());
+    plot.set_class_name("plot");
+    plot.set_attribute(
+        "style",
+        "display: flex, flex-grow: 1, align-items: center; justify-content: center"
+    ).unwrap();
+
+    let movable_plot = plot.clone();
+    (*state.borrow_mut()).subscribe(
+        "plot",
+        Box::new(move |value| {
+            console::log_1(&format!("Plot received value {}", value).as_str().into());
+            let inner_plot = movable_plot.clone();
+            inner_plot.set_inner_html("");
+
+            let window = web_sys::window().expect("No global `window` exists");
+            let document = window.document().expect("Should have a document on window");
+            let header = document.create_element("h1").unwrap();
+            header.set_text_content(
+                Some(&format!("Selected option: {}", value))
+            );
+            inner_plot.append_child(&header).unwrap();
+        })
+    ).unwrap();
+
+    Ok(plot.clone().into())
+}
+
+pub fn run_app(document: &Document, base: &HtmlElement, state: Rc<RefCell<State>>) -> Result<(), JsValue> {
     let app = document.create_element("div").unwrap();
     app.set_class_name("main");
     app.set_attribute("style", "display: flex; flex-direction: column;");
 
-    let menu = create_menu(&document).unwrap();
-    app.append_child(&menu);
+    let menu = create_menu(&document, state.clone()).unwrap();
+    app.append_child(&menu).unwrap();
 
-    base.append_child(&app);
+    let plot = create_plot(&document, state.clone()).unwrap();
+    app.append_child(&plot).unwrap();
+
+    (*state.clone().borrow_mut()).subscribe(
+        "app",
+        Box::new(|value| {
+            console::log_1(&format!("Application received value {}", value).as_str().into());
+        }),
+    ).unwrap();
+
+    base.append_child(&app).unwrap();
 
     Ok(())
 }

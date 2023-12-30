@@ -1,8 +1,10 @@
+use std::rc::Rc;
+use std::cell::RefCell;
 mod utils;
 mod webui;
 
+mod state;
 use wasm_bindgen::prelude::*;
-use web_sys::HtmlElement;
 
 #[wasm_bindgen]
 extern "C" {
@@ -20,6 +22,7 @@ fn run() -> Result<(), JsValue> {
     let document = window.document().expect("Should have a document on window");
     let body = document.body().expect("Should have a body");
 
-    webui::run_app(&document, &body);
+    let state = Rc::new(RefCell::new(state::State::new()));
+    webui::run_app(&document, &body, state.clone());
     Ok(())
 }
