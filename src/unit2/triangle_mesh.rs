@@ -135,6 +135,51 @@ async fn start(window: Window, event_loop: EventLoop<()>) {
         multiview: None,
     });
 
+    let yellow_color = wgpu::Color {
+        r: 1.0,
+        g: 1.0,
+        b: 0.0,
+        a: 1.0,
+    };
+    let lines_vertices = [
+        Vertex::new(0.0, -1.0, 0.0, yellow_color),
+        Vertex::new( 0.0, 1.0, 0.0, yellow_color),
+        Vertex::new(0.1, -1.0, 0.0, yellow_color),
+        Vertex::new(0.1, 1.0, 0.0, yellow_color),
+    ];
+    let lines_vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        label: Some("lines vertex buffer"),
+        contents: bytemuck::cast_slice(&lines_vertices),
+        usage: wgpu::BufferUsages::VERTEX,
+    });
+
+    let line_render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+        label: Some("line render pipeline"),
+        layout: Some(&pipeline_layout),
+        vertex: wgpu::VertexState {
+            module: &shader,
+            entry_point: "vs_main",
+            buffers: &[Vertex::desc()],
+        },
+        fragment: Some(wgpu::FragmentState {
+            module: &shader,
+            entry_point: "fs_main",
+            targets: &[Some(surface_format.into())],
+        }),
+        primitive: wgpu::PrimitiveState {
+            topology: wgpu::PrimitiveTopology::LineList,
+            strip_index_format: None,
+            front_face: Default::default(),
+            cull_mode: None,
+            unclipped_depth: false,
+            polygon_mode: Default::default(),
+            conservative: false,
+        },
+        depth_stencil: None,
+        multisample: Default::default(),
+        multiview: None,
+    });
+
     event_loop.set_control_flow(ControlFlow::Poll);
     event_loop.set_control_flow(ControlFlow::Wait);
 
@@ -191,6 +236,10 @@ async fn start(window: Window, event_loop: EventLoop<()>) {
                     render_pass.set_vertex_buffer(0, vertex_buffer1.slice(..));
                     render_pass.set_index_buffer(index_buffer1.slice(..), wgpu::IndexFormat::Uint16);
                     render_pass.draw_indexed(0..indices1.len() as u32, 0, 0..1);
+
+                    render_pass.set_pipeline(&line_render_pipeline);
+                    render_pass.set_vertex_buffer(0, lines_vertex_buffer.slice(..));
+                    render_pass.draw(0..lines_vertices.len() as u32, 0..1);
                 }
 
                 queue.submit(Some(encoder.finish()));
