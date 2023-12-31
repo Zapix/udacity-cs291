@@ -4,6 +4,7 @@ use web_sys::{Element, HtmlCanvasElement, console};
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::event::{WindowEvent, Event};
 use winit::window::Window;
+use wgpu::util::DeviceExt;
 
 #[cfg(target_arch = "wasm32")]
 use winit::platform::web::EventLoopExtWebSys;
@@ -11,6 +12,7 @@ use winit::platform::web::EventLoopExtWebSys;
 use winit::platform::web::WindowBuilderExtWebSys;
 
 use crate::common::traits::UnitTrait;
+use crate::common::vertex::Vertex;
 
 pub struct TriangleMesh {}
 
@@ -72,6 +74,47 @@ async fn start(window: Window, event_loop: EventLoop<()>) {
         push_constant_ranges: &[],
     });
 
+    let vertices = [
+        Vertex::new(0.0, 0.5, 0.0, wgpu::Color::BLUE),
+        Vertex::new(-0.5, -0.5, 0.0, wgpu::Color::BLUE),
+        Vertex::new(0.5, -0.5, 0.0, wgpu::Color::BLUE),
+    ];
+
+    let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        label: Some("Vertex Buffer"),
+        contents: bytemuck::cast_slice(&vertices),
+        usage: wgpu::BufferUsages::VERTEX,
+    });
+
+    let indices: &[u16] = &[0, 1, 2];
+
+    let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        label: Some("Index Buffer"),
+        contents: bytemuck::cast_slice(&indices),
+        usage: wgpu::BufferUsages::INDEX,
+    });
+
+    let vertices1 = [
+        Vertex::new(-0.9, 0.9, 0.0, wgpu::Color::RED),
+        Vertex::new(-0.9, 0.5, 0.0, wgpu::Color::RED),
+        Vertex::new( -0.4, 0.5, 0.0, wgpu::Color::RED),
+    ];
+
+    let vertex_buffer1 = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        label: Some("Vertex 1 Buffer"),
+        contents: bytemuck::cast_slice(&vertices1),
+        usage: wgpu::BufferUsages::VERTEX,
+    });
+
+    let indices1 : &[u16]= &[
+        0, 1, 2
+    ];
+
+    let index_buffer1 = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        label: Some("Vertex 1 indices"),
+        contents: bytemuck::cast_slice(indices1),
+        usage: wgpu::BufferUsages::INDEX,
+    });
 
     let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
         label: None,
@@ -79,7 +122,7 @@ async fn start(window: Window, event_loop: EventLoop<()>) {
         vertex: wgpu::VertexState {
             module: &shader,
             entry_point: "vs_main",
-            buffers: &[],
+            buffers: &[Vertex::desc()],
         },
         fragment: Some(wgpu::FragmentState {
             module: &shader,
@@ -109,6 +152,7 @@ async fn start(window: Window, event_loop: EventLoop<()>) {
                 let height = new_size.height.max(1);
                 config.width = width;
                 config.height = height;
+                console::log_1(&format!("Resize to: {}x{}", width, height).as_str().into());
                 surface.configure(&device, &config);
             },
             Event::WindowEvent {
@@ -131,7 +175,7 @@ async fn start(window: Window, event_loop: EventLoop<()>) {
                             view: &view,
                             resolve_target: None,
                             ops: wgpu::Operations {
-                                load: wgpu::LoadOp::Clear(wgpu::Color::WHITE),
+                                load: wgpu::LoadOp::Clear(wgpu::Color::GREEN),
                                 store: wgpu::StoreOp::Store,
                             },
                         })],
@@ -140,7 +184,13 @@ async fn start(window: Window, event_loop: EventLoop<()>) {
                         occlusion_query_set: None,
                     });
                     render_pass.set_pipeline(&render_pipeline);
-                    render_pass.draw(0..3, 0..1);
+                    render_pass.set_vertex_buffer(0, vertex_buffer.slice(..));
+                    render_pass.set_index_buffer(index_buffer.slice(..), wgpu::IndexFormat::Uint16);
+                    render_pass.draw_indexed(0..indices.len() as u32, 0, 0..1);
+
+                    render_pass.set_vertex_buffer(0, vertex_buffer1.slice(..));
+                    render_pass.set_index_buffer(index_buffer1.slice(..), wgpu::IndexFormat::Uint16);
+                    render_pass.draw_indexed(0..indices1.len() as u32, 0, 0..1);
                 }
 
                 queue.submit(Some(encoder.finish()));
@@ -184,7 +234,7 @@ impl UnitTrait for TriangleMesh {
             .dyn_into::<HtmlCanvasElement>().unwrap();
 
         canvas.set_attribute("id", CANVAS_ID).unwrap();
-        canvas.set_attribute("style", "width: 100%; height: 100%").unwrap();
+        canvas.set_attribute("style", "width: 846px; height: 494px").unwrap();
 
         base.append_child(&canvas).unwrap();
 
