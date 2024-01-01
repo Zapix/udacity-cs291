@@ -10,6 +10,10 @@ use wgpu::util::DeviceExt;
 use winit::platform::web::EventLoopExtWebSys;
 #[cfg(target_arch = "wasm32")]
 use winit::platform::web::WindowBuilderExtWebSys;
+use crate::common::geometry::mesh::{Mesh, DrawMesh};
+use crate::common::geometry::geometry::Geometry;
+use crate::common::geometry::face3::Face3;
+use crate::common::geometry::point::Point;
 
 use crate::common::traits::UnitTrait;
 use crate::common::vertex::Vertex;
@@ -68,71 +72,32 @@ async fn start(window: Window, event_loop: EventLoop<()>) {
         source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(include_str!("shader.wgsl"))),
     });
 
+    let render_pipeline = Mesh::create_render_pipeline(&device, &surface_format);
+
+    let mut geometry = Geometry::new();
+    geometry.verticies.push(Point::new(0.0, 0.5, 0.0));
+    geometry.verticies.push(Point::new(-0.5, -0.5, 0.0));
+    geometry.verticies.push(Point::new(0.5, -0.5, 0.0));
+
+    geometry.faces.push(Face3::new(0, 1, 2));
+
+    let triangle_mesh = Mesh::new(&device, geometry, wgpu::Color::BLUE);
+
+    let mut rectangle_geometry = Geometry::new();
+    rectangle_geometry.verticies.push(Point::new(-0.9, 0.9, 0.0));
+    rectangle_geometry.verticies.push(Point::new(-0.9, 0.5, 0.0));
+    rectangle_geometry.verticies.push(Point::new(-0.4, 0.5, 0.0));
+    rectangle_geometry.verticies.push(Point::new(-0.4, 0.9, 0.0));
+
+    rectangle_geometry.faces.push(Face3::new(0, 1, 2));
+    rectangle_geometry.faces.push(Face3::new(3, 0, 2));
+
+    let rectangle_mesh = Mesh::new(&device, rectangle_geometry, wgpu::Color::BLACK);
+
     let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         label: None,
         bind_group_layouts: &[],
         push_constant_ranges: &[],
-    });
-
-    let vertices = [
-        Vertex::new(0.0, 0.5, 0.0, wgpu::Color::BLUE),
-        Vertex::new(-0.5, -0.5, 0.0, wgpu::Color::BLUE),
-        Vertex::new(0.5, -0.5, 0.0, wgpu::Color::BLUE),
-    ];
-
-    let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-        label: Some("Vertex Buffer"),
-        contents: bytemuck::cast_slice(&vertices),
-        usage: wgpu::BufferUsages::VERTEX,
-    });
-
-    let indices: &[u16] = &[0, 1, 2];
-
-    let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-        label: Some("Index Buffer"),
-        contents: bytemuck::cast_slice(&indices),
-        usage: wgpu::BufferUsages::INDEX,
-    });
-
-    let vertices1 = [
-        Vertex::new(-0.9, 0.9, 0.0, wgpu::Color::RED),
-        Vertex::new(-0.9, 0.5, 0.0, wgpu::Color::RED),
-        Vertex::new( -0.4, 0.5, 0.0, wgpu::Color::RED),
-    ];
-
-    let vertex_buffer1 = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-        label: Some("Vertex 1 Buffer"),
-        contents: bytemuck::cast_slice(&vertices1),
-        usage: wgpu::BufferUsages::VERTEX,
-    });
-
-    let indices1 : &[u16]= &[
-        0, 1, 2
-    ];
-
-    let index_buffer1 = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-        label: Some("Vertex 1 indices"),
-        contents: bytemuck::cast_slice(indices1),
-        usage: wgpu::BufferUsages::INDEX,
-    });
-
-    let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-        label: None,
-        layout: Some(&pipeline_layout),
-        vertex: wgpu::VertexState {
-            module: &shader,
-            entry_point: "vs_main",
-            buffers: &[Vertex::desc()],
-        },
-        fragment: Some(wgpu::FragmentState {
-            module: &shader,
-            entry_point: "fs_main",
-            targets: &[Some(surface_format.into())],
-        }),
-        primitive: wgpu::PrimitiveState::default(),
-        depth_stencil: None,
-        multisample: wgpu::MultisampleState::default(),
-        multiview: None,
     });
 
     let yellow_color = wgpu::Color {
@@ -229,13 +194,8 @@ async fn start(window: Window, event_loop: EventLoop<()>) {
                         occlusion_query_set: None,
                     });
                     render_pass.set_pipeline(&render_pipeline);
-                    render_pass.set_vertex_buffer(0, vertex_buffer.slice(..));
-                    render_pass.set_index_buffer(index_buffer.slice(..), wgpu::IndexFormat::Uint16);
-                    render_pass.draw_indexed(0..indices.len() as u32, 0, 0..1);
-
-                    render_pass.set_vertex_buffer(0, vertex_buffer1.slice(..));
-                    render_pass.set_index_buffer(index_buffer1.slice(..), wgpu::IndexFormat::Uint16);
-                    render_pass.draw_indexed(0..indices1.len() as u32, 0, 0..1);
+                    render_pass.draw_mesh(&triangle_mesh);
+                    render_pass.draw_mesh(&rectangle_mesh);
 
                     render_pass.set_pipeline(&line_render_pipeline);
                     render_pass.set_vertex_buffer(0, lines_vertex_buffer.slice(..));

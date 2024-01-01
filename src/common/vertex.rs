@@ -1,4 +1,6 @@
 use wgpu;
+use crate::common::geometry::point::Point;
+
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Vertex {
@@ -14,6 +16,13 @@ impl Vertex {
     pub fn new(x: f32, y: f32, z: f32, color: wgpu::Color) -> Self {
         Self {
             position: [x, y, z],
+            color: [color.r as f32, color.g as f32, color.b as f32, color.a as f32],
+        }
+    }
+
+    pub fn from_point(point: &Point, color: &wgpu::Color) -> Self {
+        Self {
+            position: point.position(),
             color: [color.r as f32, color.g as f32, color.b as f32, color.a as f32],
         }
     }
