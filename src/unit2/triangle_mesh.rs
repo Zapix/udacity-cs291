@@ -14,6 +14,7 @@ use crate::common::geometry::mesh::{Mesh, DrawMesh};
 use crate::common::geometry::geometry::Geometry;
 use crate::common::geometry::face3::Face3;
 use crate::common::geometry::point::Point;
+use crate::common::flat_grid::flat_grid::{FlatGrid, DrawFlatGrid};
 
 use crate::common::traits::UnitTrait;
 use crate::common::vertex::Vertex;
@@ -21,6 +22,7 @@ use crate::common::vertex::Vertex;
 pub struct TriangleMesh {}
 
 const CANVAS_ID: &'static str  = "canvas";
+const CELL_SIZE: u32 = 64;
 
 
 async fn start(window: Window, event_loop: EventLoop<()>) {
@@ -67,6 +69,40 @@ async fn start(window: Window, event_loop: EventLoop<()>) {
     };
     surface.configure(&device, &config);
 
+    let resolution_arr = [width as f32, height as f32, CELL_SIZE as f32, 0.0f32];
+    let resolution_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        label: Some("resolution buffer"),
+        contents: bytemuck::cast_slice(&resolution_arr),
+        usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+    });
+
+    let resolution_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+        entries: &[
+            wgpu::BindGroupLayoutEntry {
+                binding: 0,
+                visibility: wgpu::ShaderStages::FRAGMENT,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
+                },
+                count: None,
+            }
+        ],
+        label: Some("resolution_bind_group_layout"),
+    });
+
+    let resolution_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+        label: Some("resolution_bind_group"),
+        layout: &resolution_bind_group_layout,
+        entries: &[
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: resolution_buffer.as_entire_binding(),
+            }
+        ],
+    });
+
     let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: None,
         source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(include_str!("shader.wgsl"))),
@@ -99,6 +135,12 @@ async fn start(window: Window, event_loop: EventLoop<()>) {
         bind_group_layouts: &[],
         push_constant_ranges: &[],
     });
+
+    let flat_grid_pipeline = FlatGrid::create_render_pipeline(
+        &device,
+        &surface_format,
+        &resolution_bind_group_layout
+    );
 
     let yellow_color = wgpu::Color {
         r: 1.0,
@@ -148,7 +190,6 @@ async fn start(window: Window, event_loop: EventLoop<()>) {
     event_loop.set_control_flow(ControlFlow::Poll);
     event_loop.set_control_flow(ControlFlow::Wait);
 
-
     event_loop.spawn(move |event, target| {
         let _ =(&instance, &adapter, &render_pipeline, &shader);
 
@@ -163,6 +204,12 @@ async fn start(window: Window, event_loop: EventLoop<()>) {
                 config.width = width;
                 config.height = height;
                 console::log_1(&format!("Resize to: {}x{}", width, height).as_str().into());
+                let resolution_arr = [width as f32, height as f32, CELL_SIZE as f32, 0.0f32];
+                queue.write_buffer(
+                    &resolution_buffer,
+                    0,
+                    bytemuck::cast_slice(&resolution_arr)
+                );
                 surface.configure(&device, &config);
             },
             Event::WindowEvent {
@@ -193,9 +240,14 @@ async fn start(window: Window, event_loop: EventLoop<()>) {
                         timestamp_writes: None,
                         occlusion_query_set: None,
                     });
+                    render_pass.set_pipeline(&flat_grid_pipeline);
+                    render_pass.set_bind_group(0, &resolution_bind_group, &[]);
+                    render_pass.draw_flat_grid();
+
                     render_pass.set_pipeline(&render_pipeline);
                     render_pass.draw_mesh(&triangle_mesh);
                     render_pass.draw_mesh(&rectangle_mesh);
+
 
                     render_pass.set_pipeline(&line_render_pipeline);
                     render_pass.set_vertex_buffer(0, lines_vertex_buffer.slice(..));
