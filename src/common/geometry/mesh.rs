@@ -37,10 +37,11 @@ impl Mesh {
     pub fn create_render_pipeline(
         device: &wgpu::Device,
         surface_format: &wgpu::TextureFormat,
+        resolution_bind_group_layout: &wgpu::BindGroupLayout
     ) -> wgpu::RenderPipeline {
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("render pipeline layout"),
-            bind_group_layouts: &[],
+            bind_group_layouts: &[resolution_bind_group_layout],
             push_constant_ranges: &[],
         });
 
