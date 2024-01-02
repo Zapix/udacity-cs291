@@ -1,6 +1,6 @@
 use std::borrow::Cow;
-use wasm_bindgen::{JsCast, JsValue};
-use web_sys::{Element, HtmlCanvasElement, console};
+use wasm_bindgen::JsValue;
+use web_sys::{Element,  console};
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::event::{WindowEvent, Event};
 use winit::window::Window;
@@ -8,23 +8,55 @@ use wgpu::util::DeviceExt;
 
 #[cfg(target_arch = "wasm32")]
 use winit::platform::web::EventLoopExtWebSys;
-#[cfg(target_arch = "wasm32")]
-use winit::platform::web::WindowBuilderExtWebSys;
 use crate::common::geometry::mesh::{Mesh, DrawMesh};
 use crate::common::geometry::geometry::Geometry;
 use crate::common::geometry::face3::Face3;
 use crate::common::geometry::point::Point;
 use crate::common::flat_grid::flat_grid::{FlatGrid, DrawFlatGrid};
 use crate::common::flat_axes::flat_axes::{FlatAxes, DrawFlatAxes};
+use crate::common::create_winit::create_winit_window;
 
 use crate::common::traits::UnitTrait;
-use crate::common::vertex::Vertex;
 
 pub struct TriangleMesh {}
 
-const CANVAS_ID: &'static str  = "canvas";
 const CELL_SIZE: u32 = 64;
 
+fn draw_triangle(device: &wgpu::Device) -> Mesh {
+    // This code demonstrates how to draw a triangle
+    let mut geometry = Geometry::new();
+    geometry.verticies.push(Point::new(0.0, 1.0, 0.0));
+    geometry.verticies.push(Point::new(-1.0, -1.0, 0.0));
+    geometry.verticies.push(Point::new(1.0, -1.0, 0.0));
+
+    geometry.faces.push(Face3::new(0, 1, 2));
+
+    Mesh::new(&device, geometry, wgpu::Color::BLUE)
+}
+
+fn draw_square(device: &wgpu::Device) -> Mesh {
+    // Your code goes here
+
+    let mut rectangle_geometry = Geometry::new();
+    rectangle_geometry.verticies.push(Point::new(2.0, 5.0, 0.0));
+    rectangle_geometry.verticies.push(Point::new(2.0, 2.0, 0.0));
+    rectangle_geometry.verticies.push(Point::new(6.0, 2.0, 0.0));
+    rectangle_geometry.verticies.push(Point::new(6.0, 5.0, 0.0));
+
+    rectangle_geometry.faces.push(Face3::new(0, 1, 2));
+    rectangle_geometry.faces.push(Face3::new(3, 0, 2));
+
+    return Mesh::new(
+        &device,
+        rectangle_geometry,
+        wgpu::Color {
+            r: 0.9647,
+            g: 0.5137,
+            b: 0.1176,
+            a: 1.0,
+        }
+    )
+}
 
 async fn start(window: Window, event_loop: EventLoop<()>) {
     let size = window.inner_size();
@@ -121,33 +153,9 @@ async fn start(window: Window, event_loop: EventLoop<()>) {
 
     geometry.faces.push(Face3::new(0, 1, 2));
 
-    let triangle_mesh = Mesh::new(&device, geometry, wgpu::Color::BLUE);
+    let triangle_mesh = draw_triangle(&device);
 
-    let mut rectangle_geometry = Geometry::new();
-    rectangle_geometry.verticies.push(Point::new(2.0, 5.0, 0.0));
-    rectangle_geometry.verticies.push(Point::new(2.0, 2.0, 0.0));
-    rectangle_geometry.verticies.push(Point::new(6.0, 2.0, 0.0));
-    rectangle_geometry.verticies.push(Point::new(6.0, 5.0, 0.0));
-
-    rectangle_geometry.faces.push(Face3::new(0, 1, 2));
-    rectangle_geometry.faces.push(Face3::new(3, 0, 2));
-
-    let rectangle_mesh = Mesh::new(
-        &device,
-        rectangle_geometry,
-        wgpu::Color {
-            r: 0.9647,
-            g: 0.5137,
-            b: 0.1176,
-            a: 1.0,
-        }
-    );
-
-    let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-        label: None,
-        bind_group_layouts: &[],
-        push_constant_ranges: &[],
-    });
+    let rectangle_mesh = draw_square(&device);
 
     let flat_grid_pipeline = FlatGrid::create_render_pipeline(
         &device,
@@ -160,51 +168,6 @@ async fn start(window: Window, event_loop: EventLoop<()>) {
         &surface_format,
         &resolution_bind_group_layout
     );
-
-    let yellow_color = wgpu::Color {
-        r: 1.0,
-        g: 1.0,
-        b: 0.0,
-        a: 1.0,
-    };
-    let lines_vertices = [
-        Vertex::new(0.0, -1.0, 0.0, yellow_color),
-        Vertex::new( 0.0, 1.0, 0.0, yellow_color),
-        Vertex::new(0.1, -1.0, 0.0, yellow_color),
-        Vertex::new(0.1, 1.0, 0.0, yellow_color),
-    ];
-    let lines_vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-        label: Some("lines vertex buffer"),
-        contents: bytemuck::cast_slice(&lines_vertices),
-        usage: wgpu::BufferUsages::VERTEX,
-    });
-
-    let line_render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-        label: Some("line render pipeline"),
-        layout: Some(&pipeline_layout),
-        vertex: wgpu::VertexState {
-            module: &shader,
-            entry_point: "vs_main",
-            buffers: &[Vertex::desc()],
-        },
-        fragment: Some(wgpu::FragmentState {
-            module: &shader,
-            entry_point: "fs_main",
-            targets: &[Some(surface_format.into())],
-        }),
-        primitive: wgpu::PrimitiveState {
-            topology: wgpu::PrimitiveTopology::LineList,
-            strip_index_format: None,
-            front_face: Default::default(),
-            cull_mode: None,
-            unclipped_depth: false,
-            polygon_mode: Default::default(),
-            conservative: false,
-        },
-        depth_stencil: None,
-        multisample: Default::default(),
-        multiview: None,
-    });
 
     event_loop.set_control_flow(ControlFlow::Poll);
     event_loop.set_control_flow(ControlFlow::Wait);
@@ -304,24 +267,9 @@ impl UnitTrait for TriangleMesh {
     }
 
     fn render(&self, base: &Element) -> Result<(), JsValue> {
-        let window = web_sys::window().expect("Window does not exist");
-        let document = window.document().expect("Can get document");
-
-        let canvas = document
-            .create_element("canvas").unwrap()
-            .dyn_into::<HtmlCanvasElement>().unwrap();
-
-        canvas.set_attribute("id", CANVAS_ID).unwrap();
-        canvas.set_attribute("style", "width: 846px; height: 494px").unwrap();
-
-        base.append_child(&canvas).unwrap();
-
         let event_loop = EventLoop::new().unwrap();
-        let mut builder = winit::window::WindowBuilder::new();
-        builder = builder.with_canvas(Some(canvas));
 
-        let window = builder.build(&event_loop).unwrap();
-
+        let window = create_winit_window(&event_loop, base);
         wasm_bindgen_futures::spawn_local(start(window, event_loop));
 
         Ok(())
