@@ -43,10 +43,12 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     let cell_size = i32(resolution.cell_size);
 
     let resolution_x = i32(resolution.width);
-    let gap_x = ((resolution_x) % cell_size) / 2;
+    let amount_cells_by_x = (resolution_x / cell_size);
+    let gap_x = ((resolution_x % cell_size) / 2) + select(0, cell_size / 2, (amount_cells_by_x % 2) == 1);
 
     let resolution_y = i32(resolution.height) ;
-    let gap_y = ((resolution_y) % cell_size) / 2;
+    let amount_cells_by_y = (resolution_y / cell_size);
+    let gap_y = ((resolution_y % cell_size) / 2) + select(0, cell_size / 2, (amount_cells_by_y % 2) == 1);
 
     let grid_x = i32(in.position.x);
     let grid_y = i32(in.position.y);

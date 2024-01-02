@@ -23,7 +23,7 @@ use crate::common::vertex::Vertex;
 pub struct TriangleMesh {}
 
 const CANVAS_ID: &'static str  = "canvas";
-const CELL_SIZE: u32 = 32;
+const CELL_SIZE: u32 = 64;
 
 
 async fn start(window: Window, event_loop: EventLoop<()>) {
