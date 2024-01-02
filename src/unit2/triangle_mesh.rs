@@ -15,6 +15,7 @@ use crate::common::geometry::geometry::Geometry;
 use crate::common::geometry::face3::Face3;
 use crate::common::geometry::point::Point;
 use crate::common::flat_grid::flat_grid::{FlatGrid, DrawFlatGrid};
+use crate::common::flat_axes::flat_axes::{FlatAxes, DrawFlatAxes};
 
 use crate::common::traits::UnitTrait;
 use crate::common::vertex::Vertex;
@@ -80,7 +81,7 @@ async fn start(window: Window, event_loop: EventLoop<()>) {
         entries: &[
             wgpu::BindGroupLayoutEntry {
                 binding: 0,
-                visibility: wgpu::ShaderStages::FRAGMENT,
+                visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
                 ty: wgpu::BindingType::Buffer {
                     ty: wgpu::BufferBindingType::Uniform,
                     has_dynamic_offset: false,
@@ -109,26 +110,26 @@ async fn start(window: Window, event_loop: EventLoop<()>) {
     });
 
     let render_pipeline = Mesh::create_render_pipeline(&device, &surface_format);
+    //
+    // let mut geometry = Geometry::new();
+    // geometry.verticies.push(Point::new(0.0, 0.5, 0.0));
+    // geometry.verticies.push(Point::new(-0.5, -0.5, 0.0));
+    // geometry.verticies.push(Point::new(0.5, -0.5, 0.0));
+    //
+    // geometry.faces.push(Face3::new(0, 1, 2));
+    //
+    // let triangle_mesh = Mesh::new(&device, geometry, wgpu::Color::BLUE);
 
-    let mut geometry = Geometry::new();
-    geometry.verticies.push(Point::new(0.0, 0.5, 0.0));
-    geometry.verticies.push(Point::new(-0.5, -0.5, 0.0));
-    geometry.verticies.push(Point::new(0.5, -0.5, 0.0));
+    // let mut rectangle_geometry = Geometry::new();
+    // rectangle_geometry.verticies.push(Point::new(-0.9, 0.9, 0.0));
+    // rectangle_geometry.verticies.push(Point::new(-0.9, 0.5, 0.0));
+    // rectangle_geometry.verticies.push(Point::new(-0.4, 0.5, 0.0));
+    // rectangle_geometry.verticies.push(Point::new(-0.4, 0.9, 0.0));
+    //
+    // rectangle_geometry.faces.push(Face3::new(0, 1, 2));
+    // rectangle_geometry.faces.push(Face3::new(3, 0, 2));
 
-    geometry.faces.push(Face3::new(0, 1, 2));
-
-    let triangle_mesh = Mesh::new(&device, geometry, wgpu::Color::BLUE);
-
-    let mut rectangle_geometry = Geometry::new();
-    rectangle_geometry.verticies.push(Point::new(-0.9, 0.9, 0.0));
-    rectangle_geometry.verticies.push(Point::new(-0.9, 0.5, 0.0));
-    rectangle_geometry.verticies.push(Point::new(-0.4, 0.5, 0.0));
-    rectangle_geometry.verticies.push(Point::new(-0.4, 0.9, 0.0));
-
-    rectangle_geometry.faces.push(Face3::new(0, 1, 2));
-    rectangle_geometry.faces.push(Face3::new(3, 0, 2));
-
-    let rectangle_mesh = Mesh::new(&device, rectangle_geometry, wgpu::Color::BLACK);
+    // let rectangle_mesh = Mesh::new(&device, rectangle_geometry, wgpu::Color::BLACK);
 
     let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         label: None,
@@ -137,6 +138,12 @@ async fn start(window: Window, event_loop: EventLoop<()>) {
     });
 
     let flat_grid_pipeline = FlatGrid::create_render_pipeline(
+        &device,
+        &surface_format,
+        &resolution_bind_group_layout
+    );
+
+    let flat_axes_pipeline = FlatAxes::create_render_pipeline(
         &device,
         &surface_format,
         &resolution_bind_group_layout
@@ -244,14 +251,12 @@ async fn start(window: Window, event_loop: EventLoop<()>) {
                     render_pass.set_bind_group(0, &resolution_bind_group, &[]);
                     render_pass.draw_flat_grid();
 
+                    render_pass.set_pipeline(&flat_axes_pipeline);
+                    render_pass.draw_flat_axes();
+
                     render_pass.set_pipeline(&render_pipeline);
-                    render_pass.draw_mesh(&triangle_mesh);
-                    render_pass.draw_mesh(&rectangle_mesh);
-
-
-                    render_pass.set_pipeline(&line_render_pipeline);
-                    render_pass.set_vertex_buffer(0, lines_vertex_buffer.slice(..));
-                    render_pass.draw(0..lines_vertices.len() as u32, 0..1);
+                    // render_pass.draw_mesh(&triangle_mesh);
+                    // render_pass.draw_mesh(&rectangle_mesh);
                 }
 
                 queue.submit(Some(encoder.finish()));
