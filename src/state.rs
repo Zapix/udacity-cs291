@@ -5,6 +5,7 @@ use std::rc::Rc;
 use web_sys::{console};
 use crate::common::traits::UnitTrait;
 use crate::unit0;
+use crate::unit2;
 
 pub struct State {
     state: Option<String>,
@@ -17,7 +18,14 @@ impl State {
         Self {
             state: None,
             subscribed: Box::new(HashMap::new()),
-            _units: Rc::new(unit0::get_units())
+            _units: Rc::new(
+                unit0::get_units().iter()
+                    .chain(
+                        unit2::get_units().iter()
+                    )
+                    .map(|x|(*x).clone())
+                    .collect::<Vec<Rc<Box<dyn UnitTrait>>>>()
+            ),
         }
     }
 
