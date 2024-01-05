@@ -146,12 +146,6 @@ async fn start(window: Window, event_loop: EventLoop<()>) {
         &surface_format,
         &resolution_bind_group_layout,
     );
-    let mut geometry = Geometry::new();
-    geometry.verticies.push(Point::new(0.0, 1.0, 0.0));
-    geometry.verticies.push(Point::new(-1.0, -1.0, 0.0));
-    geometry.verticies.push(Point::new(1.0, -1.0, 0.0));
-
-    geometry.faces.push(Face3::new(0, 1, 2));
 
     let triangle_mesh = draw_triangle(&device);
 
@@ -174,7 +168,6 @@ async fn start(window: Window, event_loop: EventLoop<()>) {
 
     event_loop.spawn(move |event, target| {
         let _ =(&instance, &adapter, &render_pipeline, &shader);
-
 
         match event {
             Event::WindowEvent {
@@ -240,7 +233,9 @@ async fn start(window: Window, event_loop: EventLoop<()>) {
             Event::WindowEvent {
                 event: WindowEvent::CloseRequested,
                 ..
-            } => target.exit(),
+            } => {
+                target.exit()
+            },
             Event::WindowEvent {
                 event: WindowEvent::Occluded(_),
                 ..
@@ -267,9 +262,12 @@ impl UnitTrait for TriangleMesh {
     }
 
     fn render(&self, base: &Element) -> Result<(), JsValue> {
-        let event_loop = EventLoop::new().unwrap();
-
-        let window = create_winit_window(&event_loop, base);
+        let event_loop = EventLoop::new().expect("can't create event loop");
+        let window = create_winit_window(
+            &event_loop,
+            base,
+            self.identifier().as_str(),
+        );
         wasm_bindgen_futures::spawn_local(start(window, event_loop));
 
         Ok(())

@@ -2,6 +2,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 use web_sys::{console, Document, HtmlElement, Element, Event, HtmlSelectElement};
+use winit::event_loop::EventLoop;
 use crate::state::{Observer, State};
 
 const SELECT_EXERCISE_LABEL: &str = "Select exercise";
@@ -59,11 +60,13 @@ pub fn create_plot(document: &Document, state: Rc<RefCell<State>>) -> Result<Rc<
         Box::new(move |value| {
             console::log_1(&format!("Plot received value {}", value.identifier()).as_str().into());
             let inner_plot = movable_plot.clone();
-            inner_plot.set_inner_html("");
+            match inner_plot.first_child() {
+                Some(child) => {
+                    inner_plot.remove_child(&child).unwrap();
+                },
+                None => {},
+            }
 
-            let window = web_sys::window().expect("No global `window` exists");
-            let document = window.document().expect("Should have a document on window");
-            let header = document.create_element("h1").unwrap();
             value.render(inner_plot.as_ref()).unwrap();
         })
     ).unwrap();
@@ -71,10 +74,14 @@ pub fn create_plot(document: &Document, state: Rc<RefCell<State>>) -> Result<Rc<
     Ok(plot.clone().into())
 }
 
-pub fn run_app(document: &Document, base: &HtmlElement, state: Rc<RefCell<State>>) -> Result<(), JsValue> {
+pub fn run_app(
+    document: &Document,
+    base: &HtmlElement,
+    state: Rc<RefCell<State>>,
+) -> Result<(), JsValue> {
     let app = document.create_element("div").unwrap();
     app.set_class_name("main");
-    app.set_attribute("style", "display: flex; flex-direction: column; height: 100vh;");
+    app.set_attribute("style", "display: flex; flex-direction: column; height: 100vh;").unwrap();
 
     let menu = create_menu(&document, state.clone()).unwrap();
     app.append_child(&menu).unwrap();
