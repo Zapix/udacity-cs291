@@ -5,9 +5,11 @@ use wasm_bindgen::JsCast;
 #[cfg(target_arch = "wasm32")]
 use winit::platform::web::WindowBuilderExtWebSys;
 
-const CANVAS_ID: &'static str  = "canvas";
-
-pub fn create_winit_window(event_loop: &EventLoop<()>, base: &Element) -> winit::window::Window {
+pub fn create_winit_window(
+    event_loop: &EventLoop<()>,
+    base: &Element,
+    canvas_id: &str
+) -> winit::window::Window {
     let window = web_sys::window().expect("Window does not exist");
     let document = window.document().expect("Can get document");
 
@@ -15,7 +17,7 @@ pub fn create_winit_window(event_loop: &EventLoop<()>, base: &Element) -> winit:
         .create_element("canvas").unwrap()
         .dyn_into::<HtmlCanvasElement>().unwrap();
 
-    canvas.set_attribute("id", CANVAS_ID).unwrap();
+    canvas.set_attribute("id", canvas_id).unwrap();
     canvas.set_attribute("style", "width: 846px; height: 494px").unwrap();
 
     base.append_child(&canvas).unwrap();
@@ -23,5 +25,5 @@ pub fn create_winit_window(event_loop: &EventLoop<()>, base: &Element) -> winit:
     let mut builder = winit::window::WindowBuilder::new();
     builder = builder.with_canvas(Some(canvas));
 
-    builder.build(&event_loop).unwrap()
+    builder.build(event_loop).unwrap()
 }

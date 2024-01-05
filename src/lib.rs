@@ -1,6 +1,7 @@
 extern crate console_error_panic_hook;
 use std::rc::Rc;
 use std::cell::RefCell;
+use winit::event_loop::EventLoopBuilder;
 mod utils;
 mod webui;
 
@@ -10,6 +11,7 @@ mod unit0;
 mod unit2;
 
 use wasm_bindgen::prelude::*;
+use winit::event::Event;
 
 #[wasm_bindgen]
 extern "C" {
