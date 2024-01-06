@@ -13,6 +13,7 @@ use crate::common::flat_axes::flat_axes::{FlatAxes, DrawFlatAxes};
 use crate::common::geometry::face3::Face3;
 use crate::common::geometry::geometry::Geometry;
 use crate::common::geometry::point::Point;
+use crate::common::physical_size::get_physical_size;
 
 use crate::common::canvas_unit_trait::CanvasUnitTrait;
 use crate::common::unit_trait::{UnitTrait, UnitIdentifierTrait, UnitRenderTrait};
@@ -37,11 +38,8 @@ async fn start_wgpu_with_request_animation_frame(
     canvas: HtmlCanvasElement,
     canvas_unmounted: Rc<RefCell<bool>>,
 ) {
-    // let width = canvas.width().max(1);
-    // let height = canvas.height().max(1);
-    let width = 846 * 2;
-    let height = 494 * 2;
-    console::log_1(&format!("width: {}, height: {}", width, height).as_str().into());
+    let (width, height) = get_physical_size(&canvas).expect("Can't get size of canvas");
+    console::log_1(&format!("Physical size: width: {}, height: {}", canvas.client_width(), canvas.client_height()).as_str().into());
 
     let instance = wgpu::Instance::default();
     let surface = instance.create_surface_from_canvas(canvas).unwrap();
