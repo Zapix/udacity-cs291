@@ -1,10 +1,10 @@
 use wasm_bindgen::JsValue;
 use web_sys::Element;
-use crate::common::traits::UnitTrait;
+use crate::common::unit_trait::{UnitTrait, UnitIdentifierTrait, UnitRenderTrait};
 
 pub struct Sample2;
 
-impl UnitTrait for Sample2 {
+impl UnitIdentifierTrait for Sample2 {
     fn new() -> Self {
         Self {}
     }
@@ -15,7 +15,9 @@ impl UnitTrait for Sample2 {
     fn label(&self) -> String {
         String::from("Unit 0: Second sample")
     }
+}
 
+impl UnitRenderTrait for Sample2 {
     fn render(&self, base: &Element) -> Result<(), JsValue> {
         let window = web_sys::window().expect("Window does not exist");
         let document = window.document().expect("No document");
@@ -34,3 +36,5 @@ impl UnitTrait for Sample2 {
         Ok(())
     }
 }
+
+impl UnitTrait for Sample2 {}

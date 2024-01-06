@@ -3,7 +3,7 @@ use std::error::Error;
 use std::rc::Rc;
 
 use web_sys::{console};
-use crate::common::traits::UnitTrait;
+use crate::common::unit_trait::UnitTrait;
 use crate::unit0;
 use crate::unit2;
 
