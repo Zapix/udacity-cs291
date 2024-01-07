@@ -5,8 +5,6 @@ use wasm_bindgen::{JsCast};
 use web_sys::{console, HtmlCanvasElement};
 use wgpu::util::DeviceExt;
 
-#[cfg(target_arch = "wasm32")]
-use winit::platform::web::EventLoopExtWebSys;
 use crate::common::geometry::mesh::{DrawMesh, Mesh};
 use crate::common::flat_grid::flat_grid::{FlatGrid, DrawFlatGrid};
 use crate::common::flat_axes::flat_axes::{FlatAxes, DrawFlatAxes};
@@ -63,7 +61,7 @@ async fn start_wgpu_with_request_animation_frame(
         .next()
         .unwrap_or(surface_cap.formats[0]);
 
-    let mut config = wgpu::SurfaceConfiguration {
+    let config = wgpu::SurfaceConfiguration {
         usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
         format: surface_format,
         width,
@@ -174,15 +172,15 @@ async fn start_wgpu_with_request_animation_frame(
         frame.present();
 
         let window = web_sys::window().expect("Window does not exist");
-        window.request_animation_frame(
+        let _ = window.request_animation_frame(
             redraw.borrow().as_ref().unwrap().as_ref().unchecked_ref()
-        );
+        ).expect("requestAnimationFrame should be available");
     }));
 
     let window = web_sys::window().expect("Window does not exist");
-    window.request_animation_frame(
+    let _ = window.request_animation_frame(
         redraw_closure.borrow().as_ref().unwrap().as_ref().unchecked_ref()
-    ).expect("requestAnemiationFrame should be available");
+    ).expect("requestAnimationFrame should be available");
 }
 
 pub struct VertexOrder {}

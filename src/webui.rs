@@ -2,7 +2,6 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 use web_sys::{console, Document, HtmlElement, Element, Event, HtmlSelectElement};
-use winit::event_loop::EventLoop;
 use crate::state::{Observer, State};
 
 const SELECT_EXERCISE_LABEL: &str = "Select exercise";
@@ -11,7 +10,8 @@ const NO_SELECTED_EXERCISE_LABEL: &str = "Not select";
 fn create_menu(document: &Document, state: Rc<RefCell<State>>) -> Result<Element, JsValue> {
     let menu_block = document.create_element("div").unwrap();
     menu_block.set_class_name("menu");
-    menu_block.set_attribute("style", "display: flex; flex-direction: row;");
+    menu_block.set_attribute("style", "display: flex; flex-direction: row;")
+        .expect("Can not set attribute for menu");
 
     let label = document.create_element("label").unwrap();
     label.set_text_content(Some(SELECT_EXERCISE_LABEL));
@@ -20,7 +20,7 @@ fn create_menu(document: &Document, state: Rc<RefCell<State>>) -> Result<Element
     let option = document.create_element("option").unwrap();
     select.append_child(&option).unwrap();
     option.set_text_content(Some(NO_SELECTED_EXERCISE_LABEL));
-    option.set_attribute("value", "");
+    option.set_attribute("value", "").expect("Can not set value for select");
     for unit in state.borrow().units().iter() {
         let option = document.create_element("option").unwrap();
         option.set_attribute("value", format!("{}", unit.identifier()).as_str()).unwrap();

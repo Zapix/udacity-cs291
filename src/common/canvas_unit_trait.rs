@@ -48,7 +48,7 @@ pub trait CanvasUnitTrait: UnitIdentifierTrait + UnitRenderTrait {
             .expect("Enable to start observing");
         mutation_observer_handler.forget();
 
-        base.append_child(&canvas);
+        let _ = base.append_child(&canvas).expect("Can not add canvas to base element");
 
         self.draw_canvas(
             canvas,
