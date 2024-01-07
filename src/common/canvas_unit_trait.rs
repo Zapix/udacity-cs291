@@ -9,7 +9,7 @@ use super::unit_trait::{UnitIdentifierTrait, UnitRenderTrait};
 /// Trait that renders canvas as default behavior
 pub trait CanvasUnitTrait: UnitIdentifierTrait + UnitRenderTrait {
 
-    async fn start(canvas: HtmlCanvasElement, canvas_unmounted: Rc<RefCell<bool>>);
+    fn draw_canvas(&self, canvas: HtmlCanvasElement, canvas_unmounted: Rc<RefCell<bool>>);
     fn render_canvas(&self, base: &Element) -> Result<(), JsValue> {
         let window = web_sys::window().expect("Window does not exist");
         let document = window.document().expect("Can not get document");
@@ -50,12 +50,10 @@ pub trait CanvasUnitTrait: UnitIdentifierTrait + UnitRenderTrait {
 
         base.append_child(&canvas);
 
-        // wasm_bindgen_futures::spawn_local(
-        //     Self::start(
-        //         canvas,
-        //         unmounted_canvas.clone(),
-        //     )
-        // );
+        self.draw_canvas(
+            canvas,
+            unmounted_canvas.clone(),
+        );
         Ok(())
     }
 }

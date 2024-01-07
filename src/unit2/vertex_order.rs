@@ -1,8 +1,8 @@
 use std::rc::{Rc};
 use std::cell::{RefCell};
 use wasm_bindgen::prelude::{*};
-use wasm_bindgen::{JsCast, JsValue};
-use web_sys::{Element, console, HtmlCanvasElement};
+use wasm_bindgen::{JsCast};
+use web_sys::{console, HtmlCanvasElement};
 use wgpu::util::DeviceExt;
 
 #[cfg(target_arch = "wasm32")]
@@ -16,7 +16,7 @@ use crate::common::geometry::point::Point;
 use crate::common::physical_size::get_physical_size;
 
 use crate::common::canvas_unit_trait::CanvasUnitTrait;
-use crate::common::unit_trait::{UnitTrait, UnitIdentifierTrait, UnitRenderTrait};
+use crate::common::unit_trait::{UnitTrait, UnitIdentifierTrait};
 
 const CELL_SIZE: u32 = 64;
 
@@ -74,7 +74,7 @@ async fn start_wgpu_with_request_animation_frame(
     };
     surface.configure(&device, &config);
 
-    let resolution_arr = [width as f32, height as f32, 32 as f32, 0.0f32];
+    let resolution_arr = [width as f32, height as f32, CELL_SIZE as f32, 0.0f32];
     let resolution_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
         label: Some("resolution buffer"),
         contents: bytemuck::cast_slice(&resolution_arr),
@@ -202,9 +202,10 @@ impl UnitIdentifierTrait for VertexOrder {
 }
 
 impl CanvasUnitTrait for VertexOrder {
-
-    async fn start(canvas: HtmlCanvasElement, canvas_unmounted: Rc<RefCell<bool>>) {
-        start_wgpu_with_request_animation_frame(canvas, canvas_unmounted);
+    fn draw_canvas(&self, canvas: HtmlCanvasElement, canvas_unmounted: Rc<RefCell<bool>>) {
+        wasm_bindgen_futures::spawn_local(
+            start_wgpu_with_request_animation_frame(canvas, canvas_unmounted)
+        );
     }
 }
 
