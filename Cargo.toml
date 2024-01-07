@@ -18,7 +18,6 @@ wasm-bindgen = "0.2.84"
 # code size when deploying.
 console_error_panic_hook = { version = "0.1.7", optional = true }
 wgpu = {  version="0.18.0", features = ["webgl"] }
-winit = { version="0.29.7", features = ["rwh_05"]}
 wasm-bindgen-futures = "0.4.39"
 bytemuck = { version = "1.14.0", features=["derive"]}
 
