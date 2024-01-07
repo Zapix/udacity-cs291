@@ -1,11 +1,14 @@
 mod triangle_mesh;
 mod vertex_order;
 mod polygon_creation;
+mod polygon_location;
 
 use std::rc::Rc;
 use triangle_mesh::TriangleMesh;
 use vertex_order::VertexOrder;
 use polygon_creation::PolygonCreation;
+use polygon_location::PolygonLocation;
+
 use crate::common::unit_trait::UnitTrait;
 
 pub fn get_units() -> Vec<Rc<Box<dyn UnitTrait>>> {
@@ -13,5 +16,6 @@ pub fn get_units() -> Vec<Rc<Box<dyn UnitTrait>>> {
         Rc::new(Box::new(TriangleMesh::new())),
         Rc::new(Box::new(VertexOrder::new())),
         Rc::new(Box::new(PolygonCreation::new())),
+        Rc::new(Box::new(PolygonLocation::new())),
     ]
 }
