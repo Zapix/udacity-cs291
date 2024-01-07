@@ -7,3 +7,4 @@ pub mod create_winit;
 pub mod canvas_unit_trait;
 pub mod physical_size;
 pub mod flat_grid_canvas_renderer;
+pub mod animation_frame;
