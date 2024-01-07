@@ -8,7 +8,6 @@ use crate::common::vertex::Vertex;
 
 pub struct Mesh {
     geometry: Geometry,
-    color: Color,
     pub vertex_buffer: wgpu::Buffer,
     pub index_buffer: wgpu::Buffer,
 }
@@ -27,7 +26,6 @@ impl Mesh {
 
         Self {
             geometry,
-            color,
             vertex_buffer,
             index_buffer,
         }

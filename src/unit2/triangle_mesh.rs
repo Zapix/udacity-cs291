@@ -16,9 +16,8 @@ use crate::common::flat_grid::flat_grid::{FlatGrid, DrawFlatGrid};
 use crate::common::flat_axes::flat_axes::{FlatAxes, DrawFlatAxes};
 use crate::common::create_winit::create_winit_window;
 
-use crate::common::traits::UnitTrait;
+use crate::common::unit_trait::{UnitTrait, UnitIdentifierTrait, UnitRenderTrait};
 
-pub struct TriangleMesh {}
 
 const CELL_SIZE: u32 = 64;
 
@@ -247,8 +246,9 @@ async fn start(window: Window, event_loop: EventLoop<()>) {
     });
 }
 
+pub struct TriangleMesh {}
 
-impl UnitTrait for TriangleMesh {
+impl UnitIdentifierTrait for TriangleMesh {
     fn new() -> Self {
         Self {}
     }
@@ -260,7 +260,9 @@ impl UnitTrait for TriangleMesh {
     fn label(&self) -> String {
         String::from("Lesson 2: Triangle mesh")
     }
+}
 
+impl UnitRenderTrait for TriangleMesh {
     fn render(&self, base: &Element) -> Result<(), JsValue> {
         let event_loop = EventLoop::new().expect("can't create event loop");
         let window = create_winit_window(
@@ -273,3 +275,5 @@ impl UnitTrait for TriangleMesh {
         Ok(())
     }
 }
+
+impl UnitTrait for TriangleMesh {}

@@ -1,22 +1,20 @@
 use std::rc::{Rc};
 use std::cell::{RefCell};
 use wasm_bindgen::prelude::{*};
-use wasm_bindgen::{JsCast, JsValue};
-use web_sys::{Element, console, HtmlCanvasElement};
+use wasm_bindgen::{JsCast};
+use web_sys::{console, HtmlCanvasElement};
 use wgpu::util::DeviceExt;
 
-#[cfg(target_arch = "wasm32")]
-use winit::platform::web::EventLoopExtWebSys;
 use crate::common::geometry::mesh::{DrawMesh, Mesh};
 use crate::common::flat_grid::flat_grid::{FlatGrid, DrawFlatGrid};
 use crate::common::flat_axes::flat_axes::{FlatAxes, DrawFlatAxes};
 use crate::common::geometry::face3::Face3;
 use crate::common::geometry::geometry::Geometry;
 use crate::common::geometry::point::Point;
+use crate::common::physical_size::get_physical_size;
 
-use crate::common::traits::UnitTrait;
-
-pub struct VertexOrder {}
+use crate::common::canvas_unit_trait::CanvasUnitTrait;
+use crate::common::unit_trait::{UnitTrait, UnitIdentifierTrait};
 
 const CELL_SIZE: u32 = 64;
 
@@ -38,11 +36,8 @@ async fn start_wgpu_with_request_animation_frame(
     canvas: HtmlCanvasElement,
     canvas_unmounted: Rc<RefCell<bool>>,
 ) {
-    // let width = canvas.width().max(1);
-    // let height = canvas.height().max(1);
-    let width = 846 * 2;
-    let height = 494 * 2;
-    console::log_1(&format!("width: {}, height: {}", width, height).as_str().into());
+    let (width, height) = get_physical_size(&canvas).expect("Can't get size of canvas");
+    console::log_1(&format!("Physical size: width: {}, height: {}", canvas.client_width(), canvas.client_height()).as_str().into());
 
     let instance = wgpu::Instance::default();
     let surface = instance.create_surface_from_canvas(canvas).unwrap();
@@ -66,7 +61,7 @@ async fn start_wgpu_with_request_animation_frame(
         .next()
         .unwrap_or(surface_cap.formats[0]);
 
-    let mut config = wgpu::SurfaceConfiguration {
+    let config = wgpu::SurfaceConfiguration {
         usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
         format: surface_format,
         width,
@@ -177,22 +172,23 @@ async fn start_wgpu_with_request_animation_frame(
         frame.present();
 
         let window = web_sys::window().expect("Window does not exist");
-        window.request_animation_frame(
+        let _ = window.request_animation_frame(
             redraw.borrow().as_ref().unwrap().as_ref().unchecked_ref()
-        );
+        ).expect("requestAnimationFrame should be available");
     }));
 
     let window = web_sys::window().expect("Window does not exist");
-    window.request_animation_frame(
+    let _ = window.request_animation_frame(
         redraw_closure.borrow().as_ref().unwrap().as_ref().unchecked_ref()
-    ).expect("requestAnemiationFrame should be available");
+    ).expect("requestAnimationFrame should be available");
 }
 
-impl UnitTrait for VertexOrder {
+pub struct VertexOrder {}
+
+impl UnitIdentifierTrait for VertexOrder {
     fn new() -> Self {
         Self {}
     }
-
     fn identifier(&self) -> String {
         String::from("vertex_order")
     }
@@ -201,51 +197,15 @@ impl UnitTrait for VertexOrder {
         String::from("Lesson 2: Vertex order")
     }
 
-    fn render(&self, base: &Element) -> Result<(), JsValue> {
-        let window = web_sys::window().expect("Window does not exist");
-        let document = window.document().expect("Can not get document");
+}
 
-        let canvas = document
-            .create_element("canvas").unwrap()
-            .dyn_into::<HtmlCanvasElement>().unwrap();
-
-        canvas.set_attribute("id", self.identifier().as_str()).unwrap();
-        canvas.set_attribute("style", "width: 846px; height: 494px").unwrap();
-
-
-        let unmounted_canvas = Rc::new(RefCell::new(true));
-        let movable_unmounted_canvas = unmounted_canvas.clone();
-        let canvas_id = Rc::new(self.identifier());
-        let mutation_observer_handler = Closure::<dyn FnMut()>::new(move || {
-            let window = web_sys::window().expect("window does not exist");
-            let document = window.document().expect("Can not get document");
-            *movable_unmounted_canvas.borrow_mut() = match document.get_element_by_id(&*canvas_id.as_str()) {
-                Some(_) => {
-                    true
-                },
-                None => {
-                    false
-                }
-            }
-        });
-        let mutation_observer = web_sys::MutationObserver::new(
-            mutation_observer_handler.as_ref().unchecked_ref()
-        ).expect("Can't creat observer observer");
-        let mut mutation_observer_options = web_sys::MutationObserverInit::new();
-        mutation_observer_options.child_list(true);
-        mutation_observer
-            .observe_with_options(base, &mutation_observer_options)
-            .expect("Enable to start observing");
-        mutation_observer_handler.forget();
-
-        base.append_child(&canvas);
-
+impl CanvasUnitTrait for VertexOrder {
+    fn draw_canvas(&self, canvas: HtmlCanvasElement, canvas_unmounted: Rc<RefCell<bool>>) {
         wasm_bindgen_futures::spawn_local(
-            start_wgpu_with_request_animation_frame(
-                canvas,
-                unmounted_canvas.clone(),
-            )
+            start_wgpu_with_request_animation_frame(canvas, canvas_unmounted)
         );
-        Ok(())
     }
 }
+
+impl UnitTrait for VertexOrder {}
+
